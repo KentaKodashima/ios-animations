@@ -31,13 +31,15 @@ import UIKit
 class ViewController: UIViewController {
   
   //MARK:- IB outlets
-  
   @IBOutlet var tableView: UITableView!
   @IBOutlet var menuButton: UIButton!
   @IBOutlet var titleLabel: UILabel!
   
   @IBOutlet var menuHeightConstraint: NSLayoutConstraint!
   @IBOutlet var menuButtonTrailing: NSLayoutConstraint!
+  
+  @IBOutlet var titleCenterYConstraint: NSLayoutConstraint!
+  @IBOutlet var titleCenterYConstraint_Open: NSLayoutConstraint!
   
   //MARK:- further class variables
   
@@ -46,12 +48,40 @@ class ViewController: UIViewController {
   var items: [Int] = [5, 6, 7]
   
   //MARK:- class methods
-  
   @IBAction func toggleMenu(_ sender: AnyObject) {
     menuIsOpen = !menuIsOpen
 
     titleLabel.text = menuIsOpen ? "Select Item!" : "Packing List"
     view.layoutIfNeeded()
+    
+    titleCenterYConstraint.isActive = !menuIsOpen
+    titleCenterYConstraint_Open.isActive = menuIsOpen
+    
+    titleLabel.superview?.constraints.forEach { constraint in
+      if constraint.firstItem === titleLabel &&
+        constraint.firstAttribute == .centerX {
+        constraint.constant = menuIsOpen ? -100.0 : 0.0
+        return
+      }
+      // Animate the title's position witout @IBOutlet
+//      if constraint.identifier == "TitleCenterY" {
+//        constraint.isActive = false
+//
+//        let newConstraint = NSLayoutConstraint(
+//          item: titleLabel,
+//          attribute: .centerY,
+//          relatedBy: .equal,
+//          toItem: titleLabel.superview,
+//          attribute: .centerY,
+//          multiplier: menuIsOpen ? 0.67 : 1.0,
+//          constant: 0.0
+//        )
+//
+//        newConstraint.identifier = "TitleCenterY"
+//        newConstraint.priority = UILayoutPriority.defaultHigh
+//        newConstraint.isActive = true
+//      }
+    }
     
     menuHeightConstraint.constant = menuIsOpen ? 200 : 80
     menuButtonTrailing.constant = menuIsOpen ? 16 : 8
@@ -59,7 +89,9 @@ class ViewController: UIViewController {
     UIView.animate(
       withDuration: 0.33,
       delay: 0.0,
-      options: .curveEaseIn,
+      usingSpringWithDamping: 0.4,
+      initialSpringVelocity: 10,
+      options: .allowUserInteraction,
       animations: {
         let angle: CGFloat = self.menuIsOpen ? .pi / 4 : 0.0
         self.menuButton.transform = CGAffineTransform(rotationAngle: angle)
@@ -71,38 +103,84 @@ class ViewController: UIViewController {
   
   func showItem(_ index: Int) {
     let imageView = makeImageView(index: index)
-    view.addSubview(imageView)
+    let containerView = UIView(frame: imageView.frame)
+    view.addSubview(containerView)
+    containerView.addSubview(imageView)
+    containerView.translatesAutoresizingMaskIntoConstraints = false
     
-    let conX = imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-    let conButtom = imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: imageView.frame.height)
-    let conWidth = imageView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.33, constant: -50.0)
-    let conHeight = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor)
-    NSLayoutConstraint.activate([conX, conButtom, conWidth, conHeight])
+    let conX = containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+    let conButtom = containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: containerView.frame.height)
+    let conWidth = containerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.33, constant: -50.0)
+    let conHeight = containerView.heightAnchor.constraint(equalTo: containerView.widthAnchor)
+    
+    let imageY = imageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+    let imageX = imageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor)
+    let imageWidth = imageView.widthAnchor.constraint(equalTo: containerView.widthAnchor)
+    let imageHeight = imageView.heightAnchor.constraint(equalTo: containerView.widthAnchor)
+    
+    NSLayoutConstraint.activate([conX, conButtom, conWidth, conHeight, imageY, imageX, imageWidth, imageHeight])
     view.layoutIfNeeded()
-    
-    UIView.animate(withDuration: 0.8) {
-      conButtom.constant = -imageView.frame.height * 2
-      conWidth.constant = 0.0
-      self.view.layoutIfNeeded()
-    }
     
     UIView.animate(
       withDuration: 0.8,
-      delay: 1,
-      options: .curveEaseOut,
+      delay: 0.0,
+      usingSpringWithDamping: 0.6,
+      initialSpringVelocity: 10,
+      options: [],
       animations: {
-        conButtom.constant = imageView.frame.height * 2
-        conWidth.constant = -50.0
+        conButtom.constant = -imageView.frame.height * 2
+        conWidth.constant = 0.0
         self.view.layoutIfNeeded()
-      },
+    },
       completion: nil
     )
+    
+    delay(seconds: 1.0) {
+      UIView.transition(
+        with: containerView,
+        duration: 1.0,
+        options: .transitionFlipFromBottom,
+        animations: {
+          imageView.removeFromSuperview()
+        },
+        completion: { _ in
+          containerView.removeFromSuperview()
+        }
+      )
+    }
+    
+//    UIView.animate(
+//      withDuration: 0.67,
+//      delay: 2.0,
+//      options: .curveEaseOut,
+//      animations: {
+//        conButtom.constant = imageView.frame.size.height
+//        conWidth.constant = -50.0
+//        self.view.layoutIfNeeded()
+//      },
+//      completion: { _ in
+//        // Remove from the view stack
+//        imageView.removeFromSuperview()
+//      }
+//    )
   }
 
   func transitionCloseMenu() {
     delay(seconds: 0.35, completion: {
       self.toggleMenu(self)
     })
+    
+    let titleBar = slider.superview!
+    UIView.transition(
+      with: titleBar,
+      duration: 0.5,
+      options: .transitionFlipFromBottom,
+      animations: {
+        self.slider.isHidden = true
+      }
+    ) { _ in
+      self.slider.isHidden = false
+    }
 	}
 }
 

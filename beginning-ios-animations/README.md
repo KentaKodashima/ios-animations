@@ -48,3 +48,57 @@ In the example below, `self.view.layoutIfNeeded()` trys to update the label's bo
       completion: nil
     )
 ```
+### Animating Multiplier
+Multiplier is get-only value. You cannot just change the value directly.
+```
+// This is impossible
+myConstant.multiplier = 0.5
+```
+The approach to modify the multiplier is as below.  
+1. Find the constraint you want to animate using view.constraints.
+2. Disable the constraint
+3. Create and activate the new constraint
+```
+view.constraints.forEach { constraint in
+  if constraint.identifier == "🐱width" {
+    constraint.isActive = false
+
+    let newConstraint = NSLayoutConstraint()
+    newConstraint.isActive = true
+  }
+}
+```
+
+### Transitioning
+#### Transitioning Triggers
+- isHidden (Hiding)
+- addSubview() (Unhiding)
+- removeFromSuperview()
+
+#### Methods
+##### View to view
+The `with: UIView` attribute needs a containerView.
+
+```
+UIView.transition(
+  with: UIView,
+  duration: TimeInterval,
+  options: UIView.AnimationOptions,
+  animations: (() -> Void)?,
+  completion: ((Bool) -> Void)?
+)
+```
+##### ViewController to view
+```
+UIView,transition(
+  from: UIViewController,
+  to: UIViewController,
+  duration: TimeInterval,
+  options: UIView.AnimationOptions,
+  animations: (() -> Void)?,
+  completion: ((Bool) -> Void)?
+)
+```
+
+**NOTE:**
+Use `.allowUserInteraction` option to allow user interantion while transitioning or animating.
