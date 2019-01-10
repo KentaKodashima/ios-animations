@@ -102,3 +102,42 @@ UIView,transition(
 
 **NOTE:**
 Use `.allowUserInteraction` option to allow user interantion while transitioning or animating.
+
+### Animate properties
+**Position & Size**
+
+- bounds
+- frame
+- center
+
+**Transformation**
+
+- rotation
+- scale
+- translation
+
+**Appearance**
+
+- backgroundColor
+- alpha
+
+#### Fade one background image into another smoothly
+1. Add invisible helper view on top of background view
+2. Fade helper view in
+3. Update background view and remove helper view
+
+#### Teansform property
+1. Rotation: CGAffineTransform(rotationAngle: -.pi/5)
+2. Scale: CGAffineTransform(scaleX: 1.25, y: 1.25)
+3. Translation: CGAffineTransform(translation: translationX: 0.0, y: 20.0)
+
+**NOTE:** .identity: Reseting all values
+
+#### A label fades in and current label fades out
+1. Add an invisible temp label below the real label
+2. Translate temp label up and fade it in. Translate real label down and fade it out.
+3. Update & reset real label. Remove the temp label.
+
+#### Keyframe animations
+A seires of sub-animations that are composed into a single complex animation.
+Sub-animations' duration is relative to the whole keyframe animation's duration
