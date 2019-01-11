@@ -14,7 +14,7 @@ UIView.animate(
 )
 ```
 
-### Animate constraints
+## Animate constraints
 Animate layoutIfNeeded().
 
 ```
@@ -31,7 +31,7 @@ Animate layoutIfNeeded().
     )
 ```
 
-### Change title
+## Change title
 In the example below, `self.view.layoutIfNeeded()` trys to update the label's bounds with `.curveEaseIn` animation. Therefore, `view.layoutIfNeeded()` should be called right after the lable's logic in order to keep it updated.
 
 ```
@@ -48,7 +48,7 @@ In the example below, `self.view.layoutIfNeeded()` trys to update the label's bo
       completion: nil
     )
 ```
-### Animating Multiplier
+## Animating Multiplier
 Multiplier is get-only value. You cannot just change the value directly.
 ```
 // This is impossible
@@ -69,14 +69,14 @@ view.constraints.forEach { constraint in
 }
 ```
 
-### Transitioning
-#### Transitioning Triggers
+## Transitioning
+### Transitioning Triggers
 - isHidden (Hiding)
 - addSubview() (Unhiding)
 - removeFromSuperview()
 
-#### Methods
-##### View to view
+### Methods
+#### View to view
 The `with: UIView` attribute needs a containerView.
 
 ```
@@ -88,7 +88,7 @@ UIView.transition(
   completion: ((Bool) -> Void)?
 )
 ```
-##### ViewController to view
+#### ViewController to view
 ```
 UIView,transition(
   from: UIViewController,
@@ -103,7 +103,7 @@ UIView,transition(
 **NOTE:**
 Use `.allowUserInteraction` option to allow user interantion while transitioning or animating.
 
-### Animate properties
+## Animate properties
 **Position & Size**
 
 - bounds
@@ -121,23 +121,56 @@ Use `.allowUserInteraction` option to allow user interantion while transitioning
 - backgroundColor
 - alpha
 
-#### Fade one background image into another smoothly
+### Fade one background image into another smoothly
 1. Add invisible helper view on top of background view
 2. Fade helper view in
 3. Update background view and remove helper view
 
-#### Teansform property
+### Teansform property
 1. Rotation: CGAffineTransform(rotationAngle: -.pi/5)
 2. Scale: CGAffineTransform(scaleX: 1.25, y: 1.25)
 3. Translation: CGAffineTransform(translation: translationX: 0.0, y: 20.0)
 
 **NOTE:** .identity: Reseting all values
 
-#### A label fades in and current label fades out
+### A label fades in and current label fades out
 1. Add an invisible temp label below the real label
 2. Translate temp label up and fade it in. Translate real label down and fade it out.
 3. Update & reset real label. Remove the temp label.
 
-#### Keyframe animations
+### Keyframe animations
 A seires of sub-animations that are composed into a single complex animation.
 Sub-animations' duration is relative to the whole keyframe animation's duration
+
+## ViewController Transition
+There are two protocols that you need to use to create your own view controller transition.
+
+### UIViewControllerAnimatedTransitioning protocol
+The object which conforms to this protocol is known as the animator. In order to conform to the protocol, the class is required to implement two methods.
+
+```
+// Duration
+func transitionDuration(
+  using transitionContext: UIViewControllerContextTransitioning?
+) -> TimeInterval
+
+// Transition animation itself
+func transitionContext(
+  using transitionContext: UIViewControllerContextTransitioning
+)
+```
+### UIViewControllerTransitioningDelegate protocol
+
+```
+// Present the view controller
+func animationController(
+  forPresented presented: UIViewController,
+  presenting: UIViewController, 
+  source: UIViewController
+) -> UIViewControllerAnimatedTransitioning?
+
+// Dismiss the view controller
+func animationController(
+  forDismissed dismissed: UIViewController
+) -> UIViewControllerAnimatedTransitioning?
+```
