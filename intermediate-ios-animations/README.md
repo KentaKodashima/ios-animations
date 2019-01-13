@@ -140,3 +140,65 @@ Using CABasicAnimation's beginTime property and CACurrentMediaTime(), implement 
    
 ## CAAnimationGroup
 You can set all of the shared properties and group itself, then add animations you want to group together.
+
+## Animation Delegate
+- `animationDidStart(_ anim: CAAnimation)`
+- `animationDidStop(_ anim: CAAnimation, finished flag: Bool)`
+
+## View Springs VS. Layer Springs
+### Views
+```
+UIView.animate(
+  withDuration: 1.0, delay: 0.5,
+  usingSpringWithDamping: 0.5, initialSpringVelocity: 0.0,
+  options: [], animations: {
+    // some animations
+  }, completion: nil
+)
+```
+
+### Layers
+There are four properties to adjust. The duration is calculated based on the spring properties you set, instead of the other way around.
+
+```
+let myAnimation = CASpringAnimation(keyPath: "position")
+
+// Controls the bounciness of the spring (how many times it will bounce)
+myAnimation.stiffness = 50
+
+// Corresponds to the mass of weight that's attatched to the spring. This will affect how far the weight will fall past its resting point.
+myAnimation.mass = 50
+
+// The velocity at the start of the animation
+initialVelocity = 50
+
+// Controls the frictional force that is working against the bounce of the spring
+myAnimation.damping = 50
+
+myAnimation.duration = myAnimation.settlingDuration
+```
+
+## Keyframe Animations with Layers
+1. Specify the key positions you want the balloon to hit at each keyframe
+2. Specify a correcponding set of values between zero and one, that represent the relative progress of the animation's duration at each keyframe
+
+## Which Animation API to Use?
+### View Animations
+- Fire-and-Forget
+- Simple API
+- Great for non-interactive animations
+
+Mature, established API.
+
+### Property Animators
+- Interactive & interruptible
+- Adjust animations on the fly
+
+Animate views and constraints. Animate multipleproperties.
+
+### Layers
+- Better performance
+- Simplerhierarchy
+- Fancy subclasses
+
+Easy to reuse animations. More control. Advanced timing and springs.

@@ -48,8 +48,19 @@ class ViewController: UIViewController {
 
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    
+    username.delegate = self
+    password.delegate = self
+    
     // Call animation methods here
     animateForm()
+    animateLoginButton()
+    animateBalloon()
+    
+    animateCloud(layer: cloud1.layer)
+    animateCloud(layer: cloud2.layer)
+    animateCloud(layer: cloud3.layer)
+    animateCloud(layer: cloud4.layer)
   }
   
   override func viewWillLayoutSubviews() {
@@ -57,12 +68,54 @@ class ViewController: UIViewController {
   }
 
   // MARK:- Animation Methods
+  func animateBalloon() {
+    let balloon = CALayer()
+    balloon.contents = UIImage(named: "balloon")!.cgImage
+    balloon.frame = CGRect(x: -50.0, y: 0.0, width: 50.0, height: 65.0)
+    view.layer.insertSublayer(balloon, above: username.layer)
+    
+    let flight = CAKeyframeAnimation(keyPath: keyPath.position)
+    flight.duration = 12.0
+    
+    flight.keyTimes = [0.0, 0.5, 1.0]
+    // Array of three CGPoints (balloon's positions)
+    flight.values = [
+      CGPoint(x: -50.0, y: 0.0),
+      CGPoint(x: view.frame.width + 50.0, y: 160.0),
+      CGPoint(x: -50.0, y: loginButton.center.y)
+    ]
+    
+    balloon.add(flight, forKey: nil)
+  }
+  
+  func animateCloud(layer: CALayer) {
+    let cloudSpeed = 60.0 / Double(view.layer.frame.size.width)
+    let duration: TimeInterval = Double(view.layer.frame.size.width - layer.frame.origin.x) * cloudSpeed
+    
+    let cloudMove = CABasicAnimation(keyPath: keyPath.positionX)
+    cloudMove.duration = duration
+    cloudMove.toValue = self.view.bounds.size.width + layer.bounds.width/2
+    cloudMove.delegate = self
+    cloudMove.fillMode = kCAFillModeForwards
+    
+    cloudMove.setValue("cloud", forKey: "name")
+    cloudMove.setValue(layer, forKey: "layer")
+    
+    layer.add(cloudMove, forKey: nil)
+  }
+  
   func animateForm() {
     // 1 - Create the animation object
-    let flyRight = CABasicAnimation(keyPath: keyPath.positionX)
+    let flyRight = CASpringAnimation(keyPath: keyPath.positionX)
+    
+    flyRight.damping = 250
+    flyRight.mass = 50.0
+    flyRight.stiffness = 800.0
+    flyRight.initialVelocity = 1.0
+    flyRight.duration = flyRight.settlingDuration
+    
     flyRight.fromValue = -view.bounds.size.width / 2
     flyRight.toValue = view.bounds.size.width / 2
-    flyRight.duration = 0.5
     
 //    flyRight.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
     
@@ -96,7 +149,9 @@ class ViewController: UIViewController {
     fadeLabelIn.duration = 5.0
     
     infoGroup.animations = [flyLeft, fadeLabelIn]
-    info.layer.add(infoGroup, forKey: nil)
+    info.layer.add(infoGroup, forKey: "infoAppear")
+    print(info.layer.animationKeys() ?? "No animations currently running")
+    info.layer.removeAnimation(forKey: "infoAppear")
     
     // Without CAAnimationGroup
 //    let flyLeft = CABasicAnimation(keyPath: keyPath.positionX)
@@ -109,12 +164,19 @@ class ViewController: UIViewController {
 //    fadeLabelIn.toValue = 1.0
 //    fadeLabelIn.duration = 5.0
     
+    flyRight.delegate = self
+    
+    flyRight.setValue("form", forKey: "name")
+    
     // 2 - Add the animation to a layer
+    flyRight.setValue(heading.layer, forKey: "layer")
     heading.layer.add(flyRight, forKey: nil)
     
+    flyRight.setValue(username.layer, forKey: "layer")
     flyRight.beginTime = CACurrentMediaTime() + 0.3
     username.layer.add(flyRight, forKey: nil)
     
+    flyRight.setValue(password.layer, forKey: "layer")
     flyRight.beginTime = CACurrentMediaTime() + 0.5
     password.layer.add(flyRight, forKey: nil)
     info.layer.add(flyLeft, forKey: nil)
@@ -180,12 +242,60 @@ class ViewController: UIViewController {
       tint.toValue = startColor.cgColor
       self.loginButton.layer.add(tint, forKey: nil)
     })
+    
+    let fade = CAKeyframeAnimation(keyPath: keyPath.opacity)
+    fade.duration = 5
+    fade.keyTimes = [0.0, 0.2, 0.8, 1.0]
+    fade.values = [1.0, 0.33, 0.33, 1.0]
+    
+    loginButton.layer.add(fade, forKey: nil)
+    info.layer.add(fade, forKey: nil)
+  }
+}
+
+//MARK:- CAAnimationDelegate
+extension ViewController: CAAnimationDelegate {
+  func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+    guard let name = anim.value(forKey: "name") as? String,
+    let layer = anim.value(forKey: "layer") as? CALayer else {
+      return
+    }
+    
+    if name == "form" {
+      let pulse = CABasicAnimation(keyPath: keyPath.transformScale)
+      pulse.fromValue = 1.25
+      pulse.toValue = 1.0
+      pulse.duration = 0.5
+      layer.add(pulse, forKey: nil)
+    }
   }
 }
 
 //MARK:- UITextFieldDelegate
 extension ViewController: UITextFieldDelegate {
-  func textFieldDidBeginEditing(_ textField: UITextField) {}
+  func textFieldDidBeginEditing(_ textField: UITextField) {
+    textField.layer.shadowColor = UIColor(white: 0.0, alpha: 0.5).cgColor
+    textField.layer.shadowOffset = CGSize(width: 5, height: 7)
+    textField.layer.masksToBounds = false
+    
+    textField.layer.shadowOpacity = 1.0
+    let fadeIn = CABasicAnimation(keyPath: keyPath.shadowOpacity)
+    fadeIn.fromValue = 0
+    fadeIn.toValue = 1
+    fadeIn.duration = 1.0
+    textField.layer.add(fadeIn, forKey: nil)
+    
+    let shadowBounce = CASpringAnimation(keyPath: keyPath.shadowOffset)
+    shadowBounce.fromValue = CGSize.zero
+    shadowBounce.toValue = CGSize(width: 5, height: 7)
+    shadowBounce.damping = 6.0
+    shadowBounce.duration = shadowBounce.settlingDuration
+    textField.layer.add(shadowBounce, forKey: nil)
+  }
+  
+  func textFieldDidEndEditing(_ textField: UITextField) {
+    textField.layer.shadowOpacity = 0.0
+  }
   
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {
     let nextField = (textField === username) ? password : username
