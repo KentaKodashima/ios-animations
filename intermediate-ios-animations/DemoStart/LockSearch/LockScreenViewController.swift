@@ -39,6 +39,11 @@ class LockScreenViewController: UIViewController {
   @IBOutlet weak var dateTopConstraint: NSLayoutConstraint!
 
   let blurView = UIVisualEffectView(effect: nil)
+  
+  var previewAnimator: UIViewPropertyAnimator?
+  var startFrame: CGRect?
+  var previewView: UIView?
+  let previewEffectView = IconEffectView(blur: .extraLight)
 
   var settingsController: SettingsViewController!
 
@@ -62,7 +67,67 @@ class LockScreenViewController: UIViewController {
   }
 }
 
-extension LockScreenViewController: WidgetsOwnerProtocol { }
+extension LockScreenViewController: WidgetsOwnerProtocol {
+  func startPreview(for forView: UIView) {
+    previewView?.removeFromSuperview()
+    previewView = forView.snapshotView(afterScreenUpdates: false)
+    view.insertSubview(previewView!, aboveSubview: blurView)
+    
+    previewView?.frame = forView.convert(forView.bounds, to: view)
+    startFrame = previewView?.frame
+    
+    previewEffectView.removeFromSuperview()
+    previewEffectView.frame = (previewView?.frame)!
+    previewView?.superview?.insertSubview(previewEffectView, belowSubview: previewView!)
+    
+    previewAnimator = AnimatorFactory.grow(view: previewEffectView, blurView: blurView)
+  }
+  
+  func updatePreview(percent: CGFloat) {
+    previewAnimator?.fractionComplete = max(0.01, min(0.99, percent))
+  }
+  
+  func cancelPreview() {
+    if let previewAnimator = previewAnimator {
+      previewAnimator.isReversed = true
+      previewAnimator.startAnimation()
+      
+      previewAnimator.addCompletion { position in
+        switch position {
+        case .start:
+          self.previewView?.removeFromSuperview()
+          self.previewEffectView.removeFromSuperview()
+        default: break
+        }
+      }
+    }
+  }
+  
+  func finishPreview() {
+    previewAnimator?.stopAnimation(false)
+    previewAnimator?.finishAnimation(at: .end)
+    previewAnimator = nil
+    
+    AnimatorFactory.complete(view: previewEffectView).startAnimation()
+  }
+  
+  func dismissMenu() {
+    // TODO: Create animator to dismiss menu & add completion to clean up
+    let reset = AnimatorFactory.reset(
+      frame: startFrame!,
+      view: previewEffectView,
+      blurView: blurView
+    )
+    
+    reset.addCompletion { _ in
+      self.previewEffectView.removeFromSuperview()
+      self.previewView?.removeFromSuperview()
+      self.blurView.isUserInteractionEnabled = false
+    }
+    
+    reset.startAnimation()
+  }
+}
 
 //////////////////////////
 // MARK:- * Starter Code *
@@ -78,6 +143,8 @@ extension LockScreenViewController {
     
     tableView.estimatedRowHeight = 130.0
     tableView.rowHeight = UITableViewAutomaticDimension
+    
+    previewEffectView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissMenu)))
   }
   
   override func viewWillLayoutSubviews() {

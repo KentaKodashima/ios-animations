@@ -31,6 +31,74 @@
 import UIKit
 
 class AnimatorFactory {
+  static func grow(
+    view: UIVisualEffectView,
+    blurView: UIVisualEffectView
+  ) -> UIViewPropertyAnimator {
+    view.contentView.alpha = 0
+    view.transform = .identity
+    
+    let animator = UIViewPropertyAnimator(duration: 0.5, curve: .easeIn)
+    
+    animator.addAnimations {
+      UIView.animateKeyframes(withDuration: 0.5, delay: 0.0, animations: {
+        
+        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 1.0) {
+          blurView.effect = UIBlurEffect(style: .dark)
+          view.transform = CGAffineTransform(scaleX: 1.5, y: 1.5)
+        }
+        
+        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
+          view.transform = view.transform.rotated(by: -.pi / 8)
+        }
+        
+      })
+    }
+    
+    animator.addCompletion { position in
+      blurView.effect = UIBlurEffect(style: .dark)
+      switch position {
+      case .start:
+        blurView.effect = nil
+      case .end:
+        blurView.effect = UIBlurEffect(style: .dark)
+      default: break
+      }
+    }
+    
+    return animator
+  }
+  
+  static func complete(view: UIVisualEffectView) -> UIViewPropertyAnimator {
+    return UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
+      view.contentView.alpha = 1
+      view.transform = .identity
+      view.frame = CGRect(
+        x: view.frame.minX - view.frame.minX / 2.5,
+        y: view.frame.maxY - 140,
+        width: view.frame.width + 120,
+        height: 60
+      )
+    }
+  }
+  
+  //TODO: Dismiss the menu
+  static func reset(
+    frame: CGRect,
+    view: UIVisualEffectView,
+    blurView: UIVisualEffectView
+    ) -> UIViewPropertyAnimator {
+    
+    return UIViewPropertyAnimator(
+      duration: 0.5,
+      dampingRatio: 0.7
+    ) {
+      view.transform = .identity
+      view.frame = frame
+      view.contentView.alpha = 0
+      blurView.effect = nil
+    }
+  }
   
   // TODO: Abstract animation away
   static func scaleUp(view: UIView) -> UIViewPropertyAnimator {
@@ -74,6 +142,42 @@ class AnimatorFactory {
       view.layoutIfNeeded()
     }
     return animator
+  }
+  
+  @discardableResult
+  static func jiggle(view: UIView) -> UIViewPropertyAnimator {
+    return UIViewPropertyAnimator.runningPropertyAnimator(
+      withDuration: 0.33, delay: 0, animations: {
+        UIView.animateKeyframes(
+          withDuration: 1,
+          delay: 0,
+          animations: {
+            UIView.addKeyframe(
+              withRelativeStartTime: 0.0,
+              relativeDuration: 0.25
+            ) {
+              view.transform = CGAffineTransform(rotationAngle: -.pi/8)
+            }
+            UIView.addKeyframe(
+              withRelativeStartTime: 0.25,
+              relativeDuration: 0.75
+            ) {
+              view.transform = CGAffineTransform(rotationAngle: +.pi/8)
+            }
+            UIView.addKeyframe(
+              withRelativeStartTime: 0.75,
+              relativeDuration: 1.0
+            ) {
+              view.transform = CGAffineTransform.identity
+            }
+          }, completion: {_ in
+          }
+        )
+      },
+      completion: { _ in
+        view.transform = .identity
+      }
+    )
   }
 }
 
